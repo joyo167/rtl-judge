@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 const problems = [
-  { id: 1, title: "Two Sum", acceptance: "48.3%", difficulty: "Easy" as const },
-  { id: 2, title: "Add Two Numbers", acceptance: "41.2%", difficulty: "Medium" as const },
-  { id: 3, title: "Median of Two Sorted Arrays", acceptance: "37.8%", difficulty: "Hard" as const },
+  { id: 1, slug: "full-adder", title: "Full Adder", acceptance: "48.3%", difficulty: "Easy" as const },
+  { id: 2, slug: "four-bit-counter", title: "4-Bit Counter", acceptance: "41.2%", difficulty: "Medium" as const },
+  { id: 3, slug: "barrel-shifter", title: "Barrel Shifter", acceptance: "37.8%", difficulty: "Hard" as const },
 ];
 
 const difficultyStyles: Record<string, string> = {
@@ -31,8 +33,13 @@ export default function ProblemTable() {
               }`}
             >
               <td className="px-4 py-3 text-muted">{problem.id}</td>
-              <td className="px-4 py-3 text-text hover:text-accent cursor-pointer transition-colors">
-                {problem.title}
+              <td className="px-4 py-3">
+                <Link
+                  href={`/problems/${problem.slug}`}
+                  className="text-text hover:text-accent transition-colors"
+                >
+                  {problem.title}
+                </Link>
               </td>
               <td className="px-4 py-3 text-muted">{problem.acceptance}</td>
               <td className="px-4 py-3">
