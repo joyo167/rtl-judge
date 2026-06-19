@@ -12,4 +12,9 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/",
   },
+  callbacks: {
+    async session({ session, token }) {
+      return session
+    },
+  },
 }

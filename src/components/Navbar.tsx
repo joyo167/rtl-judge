@@ -8,18 +8,18 @@ export default function Navbar() {
 
   return (
     <nav
-      className="flex items-center justify-between px-6"
-      style={{ height: 56, background: "#27272a", borderBottom: "1px solid #3f3f46" }}
+      className="flex items-center justify-between px-6 bg-background"
+      style={{ height: 56, borderBottom: "1px solid #dee2e6" }}
     >
-      <Link href="/" className="text-accent font-bold text-xl">
+      <Link href="/" className="font-bold text-xl" style={{ color: "#1a5fb4" }}>
         RTL Judge
       </Link>
 
       <div className="flex items-center gap-6">
-        <Link href="/problems" className="text-sm text-muted hover:text-white transition-colors">
+        <Link href="/problems" className="text-sm text-text hover:underline">
           Problems
         </Link>
-        <Link href="/leaderboard" className="text-sm text-muted hover:text-white transition-colors">
+        <Link href="/leaderboard" className="text-sm text-text hover:underline">
           Leaderboard
         </Link>
       </div>
@@ -30,13 +30,14 @@ export default function Navbar() {
             <img
               src={session.user.image}
               alt={session.user.name ?? "avatar"}
-              className="rounded-full w-8 h-8"
+              className="w-8 h-8"
+              style={{ borderRadius: 2 }}
             />
           )}
           <span className="text-sm text-muted">{session.user?.name}</span>
           <button
             onClick={() => signOut()}
-            className="text-sm text-muted hover:text-white transition-colors"
+            className="text-sm text-muted hover:text-text"
           >
             Sign Out
           </button>
@@ -44,7 +45,10 @@ export default function Navbar() {
       ) : (
         <button
           onClick={() => signIn("github")}
-          className="border border-accent text-accent px-4 py-1.5 rounded text-sm hover:bg-accent hover:text-white transition"
+          className="text-sm px-4 py-1.5"
+          style={{ border: "1px solid #1a5fb4", color: "#1a5fb4", borderRadius: 0 }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#164a8a")}
+          onMouseLeave={e => (e.currentTarget.style.color = "#1a5fb4")}
         >
           Sign In
         </button>
