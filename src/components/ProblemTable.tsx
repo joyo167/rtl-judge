@@ -15,34 +15,32 @@ const difficultyColors: Record<string, string> = {
 export default function ProblemTable() {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse" style={{ border: "1px solid #dee2e6" }}>
+      <table className="w-full text-sm border-collapse border border-[#dee2e6]">
         <thead>
-          <tr className="bg-surface text-left" style={{ borderBottom: "1px solid #dee2e6" }}>
-            <th className="px-4 py-3 font-semibold text-muted w-12" style={{ borderRight: "1px solid #dee2e6" }}>#</th>
-            <th className="px-4 py-3 font-semibold text-muted" style={{ borderRight: "1px solid #dee2e6" }}>Title</th>
-            <th className="px-4 py-3 font-semibold text-muted" style={{ borderRight: "1px solid #dee2e6" }}>Acceptance</th>
-            <th className="px-4 py-3 font-semibold text-muted">Difficulty</th>
+          <tr className="bg-[#f8f9fa] text-left">
+            <th className="px-4 py-3 font-semibold text-[#6c757d] border border-[#dee2e6] w-12">#</th>
+            <th className="px-4 py-3 font-semibold text-[#6c757d] border border-[#dee2e6]">Title</th>
+            <th className="px-4 py-3 font-semibold text-[#6c757d] border border-[#dee2e6]">Acceptance</th>
+            <th className="px-4 py-3 font-semibold text-[#6c757d] border border-[#dee2e6]">Difficulty</th>
           </tr>
         </thead>
         <tbody>
           {problems.map((problem) => (
             <tr
               key={problem.id}
-              className="bg-background hover:bg-surface transition-colors"
-              style={{ borderTop: "1px solid #dee2e6" }}
+              className="bg-white hover:bg-[#f8f9fa] transition-colors"
             >
-              <td className="px-4 py-3 text-muted" style={{ borderRight: "1px solid #dee2e6" }}>{problem.id}</td>
-              <td className="px-4 py-3" style={{ borderRight: "1px solid #dee2e6" }}>
+              <td className="px-4 py-3 text-[#6c757d] border border-[#dee2e6]">{problem.id}</td>
+              <td className="px-4 py-3 border border-[#dee2e6]">
                 <Link
                   href={`/problems/${problem.slug}`}
-                  className="hover:underline"
-                  style={{ color: "#1a5fb4" }}
+                  className="text-[#1a5fb4] hover:underline"
                 >
                   {problem.title}
                 </Link>
               </td>
-              <td className="px-4 py-3 text-muted" style={{ borderRight: "1px solid #dee2e6" }}>{problem.acceptance}</td>
-              <td className="px-4 py-3 font-medium" style={{ color: difficultyColors[problem.difficulty] }}>
+              <td className="px-4 py-3 text-[#6c757d] border border-[#dee2e6]">{problem.acceptance}</td>
+              <td className="px-4 py-3 font-medium border border-[#dee2e6]" style={{ color: difficultyColors[problem.difficulty] }}>
                 {problem.difficulty}
               </td>
             </tr>
