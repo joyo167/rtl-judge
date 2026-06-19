@@ -48,7 +48,7 @@ export default function ProblemPage() {
               onClick={() => setActiveTab(tab)}
               className={`pb-2 text-sm capitalize ${
                 activeTab === tab
-                  ? "text-[#1a1a1a] font-bold underline"
+                  ? "text-[#1a1a1a] font-semibold border-b-2 border-[#1a5fb4]"
                   : "text-[#6c757d]"
               }`}
             >
