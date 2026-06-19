@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  githubId    String       @unique
+  username    String
+  name        String?
+  email       String?
+  avatarUrl   String?
+  points      Int          @default(0)
+  solveCount  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+  solves      UserSolve[]
+}
+
+model Problem {
+  id            String   @id
+  title         String
+  slug          String   @unique
+  difficulty    String
+  description   String
+  testbenchCode String
+  starterCode   String?
+  tags          String[]
+  points        Int      @default(100)
+  totalSubs     Int      @default(0)
+  acceptedSubs  Int      @default(0)
+  createdAt     DateTime @default(now())
+  submissions   Submission[]
+  solves        UserSolve[]
+}
+
+model Submission {
+  id              String   @id @default(uuid())
+  userId          String
+  problemId       String
+  code            String
+  verdict         String   @default("pending")
+  executionOutput String?
+  runtimeMs       Int?
+  submittedAt     DateTime @default(now())
+  user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+}
+
+model UserSolve {
+  userId    String
+  problemId String
+  solvedAt  DateTime @default(now())
+  @@id([userId, problemId])
+  user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+}
