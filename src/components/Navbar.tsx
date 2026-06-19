@@ -13,10 +13,10 @@ export default function Navbar() {
       </Link>
 
       <div className="flex items-center gap-6">
-        <Link href="/problems" className="text-sm text-[#1a1a1a] hover:underline">
+        <Link href="/problems" className="text-sm font-medium text-[#1a1a1a] hover:underline">
           Problems
         </Link>
-        <Link href="/leaderboard" className="text-sm text-[#1a1a1a] hover:underline">
+        <Link href="/leaderboard" className="text-sm font-medium text-[#1a1a1a] hover:underline">
           Leaderboard
         </Link>
       </div>
