@@ -6,15 +6,25 @@ import { submissionQueue } from '@/lib/queue'
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
+  const sessionUser = session?.user as
+    | { id?: string; githubId?: string; email?: string | null }
+    | undefined
 
-  if (!session?.user?.email) {
+  if (!sessionUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { problemId, code } = await req.json()
 
+  // Prefer stable identifiers (DB id / GitHub id); fall back to email.
   const user = await prisma.user.findFirst({
-    where: { email: session.user.email },
+    where: {
+      OR: [
+        ...(sessionUser.id ? [{ id: sessionUser.id }] : []),
+        ...(sessionUser.githubId ? [{ githubId: sessionUser.githubId }] : []),
+        ...(sessionUser.email ? [{ email: sessionUser.email }] : []),
+      ],
+    },
   })
 
   if (!user) {
@@ -38,13 +48,17 @@ export async function POST(req: Request) {
     },
   })
 
-  await submissionQueue.add('judge', {
-    submissionId: submission.id,
-    userId: user.id,
-    problemId: problem.id,
-    userCode: code,
-    testbenchCode: problem.testbenchCode,
-  })
+  try {
+    await submissionQueue.add('judge', {
+      submissionId: submission.id,
+      userId: user.id,
+      problemId: problem.id,
+      userCode: code,
+      testbenchCode: problem.testbenchCode,
+    })
+  } catch (e) {
+    console.error('[submissions] queue.add failed (Redis):', e)
+  }
 
   return NextResponse.json({ submissionId: submission.id })
 }

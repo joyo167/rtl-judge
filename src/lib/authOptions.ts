@@ -13,30 +13,63 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/",
   },
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log("[signIn] provider:", account?.provider, "profile keys:", profile ? Object.keys(profile) : null)
       if (account?.provider === "github" && profile) {
         const githubProfile = profile as { id: number; login: string }
-        await prisma.user.upsert({
-          where: { githubId: String(githubProfile.id) },
-          update: {
-            username: githubProfile.login ?? user.name ?? "",
-            name: user.name ?? null,
-            email: user.email ?? null,
-            avatarUrl: user.image ?? null,
-          },
-          create: {
-            githubId: String(githubProfile.id),
-            username: githubProfile.login ?? user.name ?? "",
-            name: user.name ?? null,
-            email: user.email ?? null,
-            avatarUrl: user.image ?? null,
-          },
-        })
+        try {
+          const saved = await prisma.user.upsert({
+            where: { githubId: String(githubProfile.id) },
+            update: {
+              username: githubProfile.login ?? user.name ?? "",
+              name: user.name ?? null,
+              email: user.email ?? null,
+              avatarUrl: user.image ?? null,
+            },
+            create: {
+              githubId: String(githubProfile.id),
+              username: githubProfile.login ?? user.name ?? "",
+              name: user.name ?? null,
+              email: user.email ?? null,
+              avatarUrl: user.image ?? null,
+            },
+          })
+          console.log("[signIn] upsert OK, user id:", saved.id)
+        } catch (e) {
+          console.error("[signIn] PRISMA UPSERT FAILED:", e)
+        }
       }
       return true
     },
+    async jwt({ token, account, profile }) {
+      // On initial sign-in, persist the GitHub id and our DB user id.
+      if (account?.provider === "github" && profile) {
+        const githubProfile = profile as { id: number }
+        const githubId = String(githubProfile.id)
+        token.githubId = githubId
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { githubId },
+            select: { id: true },
+          })
+          if (dbUser) token.dbUserId = dbUser.id
+        } catch (e) {
+          console.error("[jwt] PRISMA LOOKUP FAILED:", e)
+        }
+      }
+      return token
+    },
     async session({ session, token }) {
+      if (session.user) {
+        ;(session.user as { id?: string; githubId?: string }).id =
+          token.dbUserId as string | undefined
+        ;(session.user as { id?: string; githubId?: string }).githubId =
+          token.githubId as string | undefined
+      }
       return session
     },
   },
