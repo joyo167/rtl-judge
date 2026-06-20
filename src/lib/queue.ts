@@ -12,7 +12,7 @@ export const submissionQueue = new Queue('submissions', {
     host: redisUrl.hostname,
     port: Number(redisUrl.port) || 6379,
     username: redisUrl.username || undefined,
-    password: decodeURIComponent(redisUrl.password) || undefined,
+    password: redisUrl.password || undefined,
     tls: needsTls ? {} : undefined,
     retryStrategy: (times: number) =>
       times > 3 ? null : Math.min(times * 200, 1000),

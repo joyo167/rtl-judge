@@ -10,7 +10,11 @@ const needsTls =
 
 export const redis =
   globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL!, {
+  new Redis({
+    host: redisUrl.hostname,
+    port: Number(redisUrl.port) || 6379,
+    username: redisUrl.username || undefined,
+    password: redisUrl.password || undefined,
     maxRetriesPerRequest: null,
     lazyConnect: true,
     retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
