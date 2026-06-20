@@ -1,10 +1,12 @@
 import Link from "next/link";
 
-const problems = [
-  { id: 1, slug: "full-adder", title: "Full Adder", acceptance: "48.3%", difficulty: "Easy" as const },
-  { id: 2, slug: "four-bit-counter", title: "4-Bit Counter", acceptance: "41.2%", difficulty: "Medium" as const },
-  { id: 3, slug: "barrel-shifter", title: "Barrel Shifter", acceptance: "37.8%", difficulty: "Hard" as const },
-];
+type Problem = {
+  id: string;
+  title: string;
+  slug: string;
+  difficulty: string;
+  acceptanceRate: number;
+};
 
 const difficultyColors: Record<string, string> = {
   Easy: "#2f9e44",
@@ -12,7 +14,7 @@ const difficultyColors: Record<string, string> = {
   Hard: "#e03131",
 };
 
-export default function ProblemTable() {
+export default function ProblemTable({ problems }: { problems: Problem[] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse border border-[#dee2e6]">
@@ -25,12 +27,12 @@ export default function ProblemTable() {
           </tr>
         </thead>
         <tbody>
-          {problems.map((problem) => (
+          {problems.map((problem, idx) => (
             <tr
               key={problem.id}
               className="bg-white hover:bg-[#f8f9fa] transition-colors"
             >
-              <td className="px-4 py-3 text-[#6c757d] border border-[#dee2e6]">{problem.id}</td>
+              <td className="px-4 py-3 text-[#6c757d] border border-[#dee2e6]">{idx + 1}</td>
               <td className="px-4 py-3 border border-[#dee2e6]">
                 <Link
                   href={`/problems/${problem.slug}`}
@@ -39,8 +41,13 @@ export default function ProblemTable() {
                   {problem.title}
                 </Link>
               </td>
-              <td className="px-4 py-3 text-[#6c757d] border border-[#dee2e6]">{problem.acceptance}</td>
-              <td className="px-4 py-3 font-medium border border-[#dee2e6]" style={{ color: difficultyColors[problem.difficulty] }}>
+              <td className="px-4 py-3 text-[#6c757d] border border-[#dee2e6]">
+                {problem.acceptanceRate === 0 ? '—' : `${problem.acceptanceRate}%`}
+              </td>
+              <td
+                className="px-4 py-3 font-medium border border-[#dee2e6]"
+                style={{ color: difficultyColors[problem.difficulty] ?? "#1a1a1a" }}
+              >
                 {problem.difficulty}
               </td>
             </tr>
