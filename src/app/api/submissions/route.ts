@@ -49,15 +49,16 @@ export async function POST(req: Request) {
   })
 
   try {
-    await submissionQueue.add('judge', {
+    const job = await submissionQueue.add('judge', {
       submissionId: submission.id,
       userId: user.id,
       problemId: problem.id,
       userCode: code,
       testbenchCode: problem.testbenchCode,
     })
-  } catch (e) {
-    console.error('[submissions] queue.add failed (Redis):', e)
+    console.log('[queue] job added successfully, id:', job.id)
+  } catch (err) {
+    console.error('[queue] FAILED to add job:', err)
   }
 
   return NextResponse.json({ submissionId: submission.id })
