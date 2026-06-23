@@ -32,10 +32,10 @@ async function runJudge(jobId, userCode, testbenchCode) {
 
   return new Promise((resolve) => {
     const cmd = [
-      `iverilog -o ${dir}/sim`,
+      `/usr/bin/iverilog -o ${dir}/sim`,
       `${dir}/testbench.v ${dir}/solution.v`,
       `2>${dir}/ce.txt`,
-      `&& timeout 5 ${dir}/sim 2>&1`,
+      `&& /usr/bin/timeout 5 ${dir}/sim 2>&1`,
       `|| (echo "==CE==" && cat ${dir}/ce.txt)`
     ].join(' ')
 
