@@ -27,10 +27,19 @@ export default function Navbar() {
             <img
               src={session.user.image}
               alt={session.user.name ?? "avatar"}
-              className="w-8 h-8"
+              className="w-8 h-8 rounded-full"
             />
           )}
-          <span className="text-sm text-[#6c757d]">{session.user?.name}</span>
+          {(session.user as { username?: string })?.username ? (
+            <Link
+              href={`/profile/${(session.user as { username?: string }).username}`}
+              className="text-sm text-[#1a5fb4] hover:underline"
+            >
+              {(session.user as { username?: string }).username}
+            </Link>
+          ) : (
+            <span className="text-sm text-[#6c757d]">{session.user?.name}</span>
+          )}
           <button
             onClick={() => signOut()}
             className="text-sm text-[#6c757d] hover:text-[#1a1a1a]"

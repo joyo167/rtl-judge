@@ -54,9 +54,12 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { githubId },
-            select: { id: true },
+            select: { id: true, username: true },
           })
-          if (dbUser) token.dbUserId = dbUser.id
+          if (dbUser) {
+            token.dbUserId = dbUser.id
+            token.username = dbUser.username
+          }
         } catch (e) {
           console.error("[jwt] PRISMA LOOKUP FAILED:", e)
         }
@@ -65,10 +68,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        ;(session.user as { id?: string; githubId?: string }).id =
-          token.dbUserId as string | undefined
-        ;(session.user as { id?: string; githubId?: string }).githubId =
-          token.githubId as string | undefined
+        const u = session.user as { id?: string; githubId?: string; username?: string }
+        u.id = token.dbUserId as string | undefined
+        u.githubId = token.githubId as string | undefined
+        u.username = token.username as string | undefined
       }
       return session
     },
