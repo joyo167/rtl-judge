@@ -96,8 +96,25 @@ const worker = new Worker('submissions', async (job) => {
     [result.verdict === 'AC' ? 1 : 0, problemId]
   )
 
-  // Update leaderboard in Redis if AC
+  // On AC: record solve, update user stats, update leaderboard
   if (result.verdict === 'AC') {
+    // Insert into UserSolve (ignore if already solved)
+    const inserted = await db.query(
+      `INSERT INTO "UserSolve" ("userId", "problemId", "solvedAt")
+       VALUES ($1, $2, NOW())
+       ON CONFLICT ("userId", "problemId") DO NOTHING`,
+      [userId, problemId]
+    )
+
+    // Increment solveCount only on first solve
+    if (inserted.rowCount > 0) {
+      await db.query(
+        `UPDATE "User" SET "solveCount" = "solveCount" + 1 WHERE id=$1`,
+        [userId]
+      )
+    }
+
+    // Update Redis leaderboard
     const pts = await db.query(
       `SELECT points FROM "Problem" WHERE id=$1`,
       [problemId]
