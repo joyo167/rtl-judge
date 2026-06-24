@@ -31,11 +31,13 @@ async function runJudge(jobId, userCode, testbenchCode) {
   const startTime = Date.now()
 
   return new Promise((resolve) => {
+    const iverilog = process.env.IVERILOG_PATH || 'iverilog'
+    const timeout  = process.env.TIMEOUT_PATH  || 'timeout'
     const cmd = [
-      `/usr/bin/iverilog -o ${dir}/sim`,
+      `${iverilog} -o ${dir}/sim`,
       `${dir}/testbench.v ${dir}/solution.v`,
       `2>${dir}/ce.txt`,
-      `&& /usr/bin/timeout 5 ${dir}/sim 2>&1`,
+      `&& ${timeout} 5 ${dir}/sim 2>&1`,
       `|| (echo "==CE==" && cat ${dir}/ce.txt)`
     ].join(' ')
 
