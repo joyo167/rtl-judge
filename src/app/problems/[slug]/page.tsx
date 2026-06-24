@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import ProblemDetail from "@/components/ProblemDetail";
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProblemPage({
   params,
 }: {

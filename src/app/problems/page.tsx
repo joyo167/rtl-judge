@@ -1,6 +1,8 @@
 import ProblemTable from "@/components/ProblemTable";
 import { prisma } from "@/lib/db";
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProblemsPage() {
   const raw = await prisma.problem.findMany({
     select: {

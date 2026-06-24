@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/authOptions'
 import { prisma } from '@/lib/db'
 import { submissionQueue } from '@/lib/queue'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   const sessionUser = session?.user as
