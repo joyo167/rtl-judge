@@ -98,35 +98,32 @@ const worker = new Worker('submissions', async (job) => {
     [result.verdict === 'AC' ? 1 : 0, problemId]
   )
 
-  // On AC: record solve, update user stats, update leaderboard
+  // On AC: award points only on first solve
   if (result.verdict === 'AC') {
-    // Insert into UserSolve (ignore if already solved)
-    const inserted = await db.query(
-      `INSERT INTO "UserSolve" ("userId", "problemId", "solvedAt")
-       VALUES ($1, $2, NOW())
-       ON CONFLICT ("userId", "problemId") DO NOTHING`,
+    const existing = await db.query(
+      `SELECT 1 FROM "UserSolve" WHERE "userId"=$1 AND "problemId"=$2`,
       [userId, problemId]
     )
 
-    // Increment solveCount only on first solve
-    if (inserted.rowCount > 0) {
-      await db.query(
-        `UPDATE "User" SET "solveCount" = "solveCount" + 1 WHERE id=$1`,
-        [userId]
+    if (existing.rows.length === 0) {
+      const pts = await db.query(
+        `SELECT points FROM "Problem" WHERE id=$1`,
+        [problemId]
       )
-    }
+      const points = pts.rows[0]?.points ?? 100
 
-    // Update Redis leaderboard
-    const pts = await db.query(
-      `SELECT points FROM "Problem" WHERE id=$1`,
-      [problemId]
-    )
-    if (pts.rows[0]) {
-      await redis.zadd(
-        'leaderboard:global',
-        'INCR',
-        pts.rows[0].points,
-        userId
+      await redis.zadd('leaderboard:global', 'INCR', points, userId)
+
+      await db.query(
+        `INSERT INTO "UserSolve" ("userId", "problemId", "solvedAt")
+         VALUES ($1, $2, NOW())
+         ON CONFLICT DO NOTHING`,
+        [userId, problemId]
+      )
+
+      await db.query(
+        `UPDATE "User" SET points = points + $1, "solveCount" = "solveCount" + 1 WHERE id=$2`,
+        [points, userId]
       )
     }
   }

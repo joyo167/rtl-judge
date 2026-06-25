@@ -1,16 +1,25 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 type Problem = {
   id: string;
+  slug: string;
   title: string;
   difficulty: string;
   description: string;
   starterCode: string | null;
+};
+
+type SubmissionRow = {
+  id: string;
+  verdict: string;
+  submittedAt: string;
+  runtimeMs: number | null;
+  executionOutput: string | null;
 };
 
 type VerdictState = {
@@ -27,12 +36,35 @@ const difficultyColors: Record<string, string> = {
 
 type Tab = "description" | "submissions";
 
-export default function ProblemDetail({ problem }: { problem: Problem }) {
+export default function ProblemDetail({ problem, slug }: { problem: Problem; slug: string }) {
   const [activeTab, setActiveTab] = useState<Tab>("description");
   const [editorValue, setEditorValue] = useState(problem.starterCode ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<VerdictState>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [submissions, setSubmissions] = useState<SubmissionRow[] | null>(null);
+  const [subsLoading, setSubsLoading] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const loadSubmissions = useCallback(async () => {
+    setSubsLoading(true);
+    try {
+      const res = await fetch(`/api/problems/${slug}/submissions`);
+      const data = await res.json();
+      setSubmissions(data);
+    } catch {
+      setSubmissions([]);
+    } finally {
+      setSubsLoading(false);
+    }
+  }, [slug]);
+
+  function handleTabChange(tab: Tab) {
+    setActiveTab(tab);
+    if (tab === "submissions" && submissions === null) {
+      loadSubmissions();
+    }
+  }
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -93,7 +125,7 @@ export default function ProblemDetail({ problem }: { problem: Problem }) {
           {(["description", "submissions"] as Tab[]).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabChange(tab)}
               className={`pb-2 text-sm capitalize ${
                 activeTab === tab
                   ? "text-[#1a1a1a] font-semibold border-b-2 border-[#1a5fb4]"
@@ -114,8 +146,65 @@ export default function ProblemDetail({ problem }: { problem: Problem }) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-[#6c757d] text-sm">No submissions yet</p>
+          <div className="text-sm">
+            {subsLoading && (
+              <p className="text-[#6c757d] py-8 text-center">Loading…</p>
+            )}
+            {!subsLoading && submissions === null && (
+              <p className="text-[#6c757d] py-8 text-center">Sign in to see your submissions</p>
+            )}
+            {!subsLoading && submissions !== null && submissions.length === 0 && (
+              <p className="text-[#6c757d] py-8 text-center">No submissions yet</p>
+            )}
+            {!subsLoading && submissions && submissions.length > 0 && (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-[#6c757d] border-b border-[#dee2e6]">
+                    <th className="text-left py-2 pr-3 font-medium">#</th>
+                    <th className="text-left py-2 pr-3 font-medium">Verdict</th>
+                    <th className="text-left py-2 pr-3 font-medium">Runtime</th>
+                    <th className="text-left py-2 font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {submissions.map((s, i) => {
+                    const isGreen = s.verdict === "AC";
+                    const isGray = s.verdict === "pending" || s.verdict === "PENDING";
+                    const expandable = s.verdict === "CE" || s.verdict === "WA" || s.verdict === "RE" || s.verdict === "TLE";
+                    const isOpen = expanded === s.id;
+                    return (
+                      <>
+                        <tr
+                          key={s.id}
+                          onClick={() => expandable && setExpanded(isOpen ? null : s.id)}
+                          className={`border-b border-[#f1f3f5] ${expandable ? "cursor-pointer hover:bg-[#f8f9fa]" : ""}`}
+                        >
+                          <td className="py-2 pr-3 text-[#6c757d]">{submissions.length - i}</td>
+                          <td className="py-2 pr-3 font-semibold" style={{ color: isGreen ? "#2f9e44" : isGray ? "#6c757d" : "#e03131" }}>
+                            {s.verdict}
+                          </td>
+                          <td className="py-2 pr-3 text-[#6c757d]">
+                            {s.runtimeMs != null ? `${s.runtimeMs} ms` : "—"}
+                          </td>
+                          <td className="py-2 text-[#6c757d]">
+                            {new Date(s.submittedAt).toLocaleString()}
+                          </td>
+                        </tr>
+                        {expandable && isOpen && s.executionOutput && (
+                          <tr key={`${s.id}-output`}>
+                            <td colSpan={4} className="pb-3 pt-1">
+                              <pre className="bg-[#f8f9fa] border border-[#dee2e6] p-3 text-xs text-[#1a1a1a] whitespace-pre-wrap overflow-auto max-h-48">
+                                {s.executionOutput}
+                              </pre>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>

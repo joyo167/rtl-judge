@@ -12,6 +12,7 @@ export default async function ProblemPage({
     where: { slug: params.slug },
     select: {
       id: true,
+      slug: true,
       title: true,
       difficulty: true,
       description: true,
@@ -27,5 +28,5 @@ export default async function ProblemPage({
     );
   }
 
-  return <ProblemDetail problem={problem} />;
+  return <ProblemDetail problem={problem} slug={params.slug} />;
 }
