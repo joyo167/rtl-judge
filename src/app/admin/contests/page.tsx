@@ -63,7 +63,13 @@ export default function AdminContestPage() {
     const res = await fetch('/api/contests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, startTime, endTime, problems: validSlots }),
+      body: JSON.stringify({
+        title,
+        description,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+        problems: validSlots,
+      }),
     })
 
     setSubmitting(false)
