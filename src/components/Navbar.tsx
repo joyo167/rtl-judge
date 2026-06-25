@@ -16,9 +16,17 @@ export default function Navbar() {
         <Link href="/problems" className="text-sm font-medium text-[#1a1a1a] hover:underline">
           Problems
         </Link>
+        <Link href="/contests" className="text-sm font-medium text-[#1a1a1a] hover:underline">
+          Contests
+        </Link>
         <Link href="/leaderboard" className="text-sm font-medium text-[#1a1a1a] hover:underline">
           Leaderboard
         </Link>
+        {(session?.user as { username?: string })?.username === process.env.NEXT_PUBLIC_ADMIN_GITHUB_USERNAME && (
+          <Link href="/admin/contests" className="text-sm font-medium text-[#1a5fb4] hover:underline">
+            + Contest
+          </Link>
+        )}
       </div>
 
       {session ? (

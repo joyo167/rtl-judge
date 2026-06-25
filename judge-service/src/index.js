@@ -138,4 +138,52 @@ worker.on('completed', (job, result) =>
 worker.on('failed', (job, err) =>
   console.error(`[worker] job ${job.id} failed:`, err.message))
 
+// ── Contest BullMQ Worker ─────────────────────
+const contestWorker = new Worker('contest-submissions', async (job) => {
+  const { submissionId, userId, contestId,
+          problemId, userCode, testbenchCode,
+          attemptNum, startTime } = job.data
+
+  console.log(`[contest] processing job ${job.id}, submission ${submissionId}`)
+
+  const result = await runJudge(submissionId, userCode, testbenchCode)
+
+  console.log(`[contest] verdict: ${result.verdict} in ${result.runtimeMs}ms`)
+
+  await db.query(
+    `UPDATE "ContestSubmission"
+     SET verdict=$1, "executionOutput"=$2, "runtimeMs"=$3
+     WHERE id=$4`,
+    [result.verdict, result.output, result.runtimeMs, submissionId]
+  )
+
+  if (result.verdict === 'AC') {
+    const firstAC = await db.query(
+      `SELECT id FROM "ContestSubmission"
+       WHERE "userId"=$1 AND "problemId"=$2 AND "contestId"=$3
+       AND verdict='AC' AND id != $4
+       LIMIT 1`,
+      [userId, problemId, contestId, submissionId]
+    )
+
+    if (firstAC.rows.length === 0) {
+      const contestStart = new Date(startTime)
+      const solveTime = Math.floor((Date.now() - contestStart.getTime()) / 60000)
+      const penalty = (attemptNum - 1) * 20
+      const totalForProblem = solveTime + penalty
+
+      await redis.zincrby(`contest:${contestId}:solved`, 1, userId)
+      await redis.zincrby(`contest:${contestId}:penalty`, totalForProblem, userId)
+    }
+  }
+
+  return result
+}, { connection: redis, concurrency: 2 })
+
+contestWorker.on('completed', (job, result) =>
+  console.log(`[contest-worker] job ${job.id} done: ${result.verdict}`))
+
+contestWorker.on('failed', (job, err) =>
+  console.error(`[contest-worker] job ${job.id} failed:`, err.message))
+
 console.log('[judge] worker started, waiting for jobs...')

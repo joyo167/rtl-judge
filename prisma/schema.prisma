@@ -19,6 +19,7 @@ model User {
   createdAt   DateTime     @default(now())
   submissions Submission[]
   solves      UserSolve[]
+  contestSubmissions ContestSubmission[]
 }
 
 model Problem {
@@ -36,6 +37,8 @@ model Problem {
   createdAt     DateTime @default(now())
   submissions   Submission[]
   solves        UserSolve[]
+  contestProblems    ContestProblem[]
+  contestSubmissions ContestSubmission[]
 }
 
 model Submission {
@@ -57,5 +60,47 @@ model UserSolve {
   solvedAt  DateTime @default(now())
   @@id([userId, problemId])
   user    User    @relation(fields: [userId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+}
+
+model Contest {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  contestProblems ContestProblem[]
+  submissions     ContestSubmission[]
+}
+
+model ContestProblem {
+  contestId  String
+  problemId  String
+  orderIndex Int
+  points     Int     @default(500)
+
+  contest Contest @relation(fields: [contestId], references: [id])
+  problem Problem @relation(fields: [problemId], references: [id])
+  @@id([contestId, problemId])
+}
+
+model ContestSubmission {
+  id           String   @id @default(uuid())
+  userId       String
+  contestId    String
+  problemId    String
+  code         String
+  verdict      String   @default("pending")
+  attemptNum   Int      @default(1)
+  penaltyMins  Int      @default(0)
+  submittedAt  DateTime @default(now())
+  executionOutput String?
+  runtimeMs    Int?
+
+  user    User    @relation(fields: [userId],    references: [id])
+  contest Contest @relation(fields: [contestId], references: [id])
   problem Problem @relation(fields: [problemId], references: [id])
 }
