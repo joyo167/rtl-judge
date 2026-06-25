@@ -57,7 +57,7 @@ export async function GET(
     problems: Record<string, { solved: boolean; attempts: number; solveTime?: number; penalty?: number }>
   }>()
 
-  for (const [key, ac] of firstAC.entries()) {
+  for (const [key, ac] of Array.from(firstAC.entries())) {
     const [userId] = key.split(':')
     if (!userMap.has(userId)) {
       userMap.set(userId, {
@@ -111,7 +111,7 @@ export async function GET(
   }
 
   // Sort: solved DESC, penalty ASC
-  const rows = [...userMap.entries()]
+  const rows = Array.from(userMap.entries())
     .map(([userId, u]) => ({ userId, ...u }))
     .sort((a, b) => b.solved - a.solved || a.totalPenalty - b.totalPenalty)
     .slice(0, 100)
