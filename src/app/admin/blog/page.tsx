@@ -21,8 +21,7 @@ export default function AdminBlogPage() {
     if (status === 'unauthenticated') router.replace('/')
   }, [status, router])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit() {
     setError('')
     setSubmitting(true)
 
@@ -50,62 +49,79 @@ export default function AdminBlogPage() {
     return <main className="max-w-3xl mx-auto px-6 py-8"><p className="text-sm text-[#b71c1c]">Access denied. Admins only.</p></main>
   }
 
+  const mdClass = `
+    text-[#1a1a1a] leading-relaxed text-sm
+    [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2
+    [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-2
+    [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1
+    [&_p]:mb-3 [&_p:last-child]:mb-0
+    [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3
+    [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3
+    [&_li]:mb-1
+    [&_code]:bg-[#f1f3f5] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_code]:text-[#c92a2a]
+    [&_pre]:bg-[#f8f9fa] [&_pre]:border [&_pre]:border-[#dee2e6] [&_pre]:p-3 [&_pre]:overflow-auto [&_pre]:text-xs [&_pre]:mb-3 [&_pre]:rounded
+    [&_pre_code]:bg-transparent [&_pre_code]:text-[#1a1a1a] [&_pre_code]:p-0
+    [&_strong]:font-semibold
+    [&_a]:text-[#1a5fb4] [&_a]:underline [&_a]:underline-offset-2
+    [&_blockquote]:border-l-4 [&_blockquote]:border-[#1a5fb4] [&_blockquote]:pl-4 [&_blockquote]:text-[#6c757d] [&_blockquote]:italic [&_blockquote]:my-3
+  `
+
   return (
-    <main className="max-w-3xl mx-auto px-6 py-8 font-[Inter,sans-serif]">
-      <h1 className="text-2xl font-bold text-[#1a1a1a] mb-8">Post Announcement</h1>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-semibold text-[#1a1a1a] mb-1">Title *</label>
-          <input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            required
-            placeholder="Announcement title"
-            className="w-full border border-[#dee2e6] px-3 py-2 text-sm focus:outline-none focus:border-[#1a5fb4]"
-          />
+    <div className="flex flex-col h-[calc(100vh-56px)]">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-6 h-12 bg-white border-b border-[#dee2e6] flex-shrink-0">
+        <h1 className="text-sm font-bold text-[#1a1a1a]">New Announcement</h1>
+        <div className="flex items-center gap-3">
+          {error && <span className="text-xs text-[#e03131]">{error}</span>}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="bg-[#1a5fb4] text-white px-5 py-1.5 text-sm font-semibold hover:bg-[#1a4f94] disabled:opacity-50 transition-colors"
+          >
+            {submitting ? 'Posting…' : 'Post Announcement'}
+          </button>
         </div>
+      </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-[#1a1a1a] mb-1">Content *</label>
+      {/* Title */}
+      <div className="px-6 py-3 border-b border-[#dee2e6] bg-[#f8f9fa] flex-shrink-0">
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          required
+          placeholder="Announcement title…"
+          className="w-full bg-transparent text-xl font-bold text-[#1a1a1a] placeholder-[#adb5bd] focus:outline-none"
+        />
+      </div>
+
+      {/* Editor + Preview split */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Editor */}
+        <div className="flex flex-col flex-1 border-r border-[#dee2e6]">
+          <div className="px-4 py-1.5 bg-[#f8f9fa] border-b border-[#dee2e6]">
+            <span className="text-xs font-medium text-[#6c757d] uppercase tracking-wider">Markdown</span>
+          </div>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            required
-            rows={12}
-            placeholder={"Write in Markdown.\n**bold**, # heading, `code`, etc."}
-            className="w-full border border-[#dee2e6] px-3 py-2 text-sm font-mono focus:outline-none focus:border-[#1a5fb4] resize-y"
-            style={{ minHeight: '300px' }}
+            placeholder={"Write in Markdown...\n\n**bold**, *italic*, # heading, `code`\n\n```\ncode block\n```"}
+            className="flex-1 px-5 py-4 text-sm font-mono text-[#1a1a1a] bg-white focus:outline-none resize-none leading-relaxed"
           />
         </div>
 
-        {content && (
-          <div>
-            <p className="text-sm text-[#6c757d] mb-2">Preview:</p>
-            <div className="border border-[#dee2e6] p-4 min-h-[100px] text-sm text-[#1a1a1a] leading-relaxed
-              [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2
-              [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mb-2
-              [&_h3]:font-semibold [&_h3]:mb-1
-              [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3
-              [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3
-              [&_code]:bg-[#f1f3f5] [&_code]:px-1 [&_code]:font-mono
-              [&_pre]:bg-[#f1f3f5] [&_pre]:p-3 [&_pre]:overflow-auto
-              [&_strong]:font-semibold [&_a]:text-[#1a5fb4] [&_a]:underline">
-              <ReactMarkdown>{content}</ReactMarkdown>
-            </div>
+        {/* Preview */}
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          <div className="px-4 py-1.5 bg-[#f8f9fa] border-b border-[#dee2e6] flex-shrink-0">
+            <span className="text-xs font-medium text-[#6c757d] uppercase tracking-wider">Preview</span>
           </div>
-        )}
-
-        {error && <p className="text-sm text-[#b71c1c]">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="bg-[#1a5fb4] text-white px-6 py-2 text-sm font-semibold hover:bg-[#1a4f94] disabled:opacity-50 transition-colors"
-        >
-          {submitting ? 'Posting…' : 'Post Announcement'}
-        </button>
-      </form>
-    </main>
+          <div className={`px-6 py-4 flex-1 ${mdClass}`}>
+            {content
+              ? <ReactMarkdown>{content}</ReactMarkdown>
+              : <p className="text-[#adb5bd] text-sm italic">Nothing to preview yet…</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
