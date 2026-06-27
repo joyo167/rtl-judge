@@ -13,6 +13,9 @@ export default function Navbar() {
       </Link>
 
       <div className="flex items-center gap-6">
+        <Link href="/" className="text-sm font-medium text-[#1a1a1a] hover:underline">
+          Home
+        </Link>
         <Link href="/problems" className="text-sm font-medium text-[#1a1a1a] hover:underline">
           Problems
         </Link>
@@ -23,9 +26,14 @@ export default function Navbar() {
           Leaderboard
         </Link>
         {(session?.user as { username?: string })?.username === process.env.NEXT_PUBLIC_ADMIN_GITHUB_USERNAME && (
-          <Link href="/admin/contests" className="text-sm font-medium text-[#1a5fb4] hover:underline">
-            + Contest
-          </Link>
+          <>
+            <Link href="/admin/contests" className="text-sm font-medium text-[#1a5fb4] hover:underline">
+              + Contest
+            </Link>
+            <Link href="/admin/blog" className="text-sm font-medium text-[#1a5fb4] hover:underline">
+              + Blog
+            </Link>
+          </>
         )}
       </div>
 
