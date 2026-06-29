@@ -30,6 +30,7 @@
 .dark .hover\:bg-\[\#1a4f94\]:hover  { background-color: #1a4f94; }
 
 /* Text */
+.dark .text-text           { color: #e6edf3; }
 .dark .text-\[\#1a1a1a\]  { color: #e6edf3; }
 .dark .text-\[\#6c757d\]  { color: #8b949e; }
 .dark .text-\[\#343a40\]  { color: #e6edf3; }

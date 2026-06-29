@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
+import { useTheme } from "next-themes";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -37,6 +38,9 @@ const difficultyColors: Record<string, string> = {
 type Tab = "description" | "submissions";
 
 export default function ProblemDetail({ problem, slug }: { problem: Problem; slug: string }) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [activeTab, setActiveTab] = useState<Tab>("description");
   const [editorValue, setEditorValue] = useState(problem.starterCode ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -221,7 +225,7 @@ export default function ProblemDetail({ problem, slug }: { problem: Problem; slu
           <MonacoEditor
             height="100%"
             language="verilog"
-            theme="vs"
+            theme={mounted && resolvedTheme === 'dark' ? 'vs-dark' : 'vs'}
             defaultValue={problem.starterCode ?? ""}
             onChange={(val) => setEditorValue(val ?? "")}
             options={{

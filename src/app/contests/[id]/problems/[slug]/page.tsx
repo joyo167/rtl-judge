@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
@@ -14,6 +15,9 @@ const diffColors: Record<string, string> = { Easy: '#2f9e44', Medium: '#f08c00',
 
 export default function ContestProblemPage() {
   const { id: contestId, slug } = useParams<{ id: string; slug: string }>()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const [problem, setProblem] = useState<Problem | null>(null)
   const [editorValue, setEditorValue] = useState('')
@@ -177,7 +181,7 @@ export default function ContestProblemPage() {
           <MonacoEditor
             height="100%"
             language="verilog"
-            theme="vs"
+            theme={mounted && resolvedTheme === 'dark' ? 'vs-dark' : 'vs'}
             defaultValue={problem.starterCode ?? ''}
             onChange={(val) => setEditorValue(val ?? '')}
             options={{ fontSize: 14, minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false, padding: { top: 16 } }}

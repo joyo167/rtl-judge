@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useTheme } from 'next-themes'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import dynamic_ from 'next/dynamic'
@@ -22,6 +23,9 @@ function toSlug(title: string) {
 export default function NewProblemPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -175,7 +179,7 @@ export default function NewProblemPage() {
             <MonacoEditor
               height="220px"
               language="verilog"
-              theme="light"
+              theme={mounted && resolvedTheme === 'dark' ? 'vs-dark' : 'vs'}
               value={starterCode}
               onChange={v => setStarterCode(v ?? '')}
               options={{
@@ -198,7 +202,7 @@ export default function NewProblemPage() {
             <MonacoEditor
               height="360px"
               language="verilog"
-              theme="light"
+              theme={mounted && resolvedTheme === 'dark' ? 'vs-dark' : 'vs'}
               value={testbenchCode}
               onChange={v => setTestbenchCode(v ?? '')}
               options={{
