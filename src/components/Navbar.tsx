@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <nav className="flex items-center justify-between px-6 h-14 bg-white border-b border-[#dee2e6]">
@@ -37,40 +42,51 @@ export default function Navbar() {
         )}
       </div>
 
-      {session ? (
-        <div className="flex items-center gap-3">
-          {session.user?.image && (
-            <img
-              src={session.user.image}
-              alt={session.user.name ?? "avatar"}
-              className="w-8 h-8 rounded-full"
-            />
-          )}
-          {(session.user as { username?: string })?.username ? (
-            <Link
-              href={`/profile/${(session.user as { username?: string }).username}`}
-              className="text-sm text-[#1a5fb4] hover:underline"
-            >
-              {(session.user as { username?: string }).username}
-            </Link>
-          ) : (
-            <span className="text-sm text-[#6c757d]">{session.user?.name}</span>
-          )}
+      <div className="flex items-center gap-3">
+        {mounted && (
           <button
-            onClick={() => signOut()}
-            className="text-sm text-[#6c757d] hover:text-[#1a1a1a]"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 flex items-center justify-center text-base rounded-full hover:bg-[#f8f9fa] dark:hover:bg-[#21262d] transition-colors text-[#6c757d]"
+            aria-label="Toggle dark mode"
           >
-            Sign Out
+            {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => signIn("github")}
-          className="border border-[#1a5fb4] text-[#1a5fb4] px-4 py-1.5 text-sm hover:bg-[#f8f9fa]"
-        >
-          Sign In
-        </button>
-      )}
+        )}
+        {session ? (
+          <div className="flex items-center gap-3">
+            {session.user?.image && (
+              <img
+                src={session.user.image}
+                alt={session.user.name ?? "avatar"}
+                className="w-8 h-8 rounded-full"
+              />
+            )}
+            {(session.user as { username?: string })?.username ? (
+              <Link
+                href={`/profile/${(session.user as { username?: string }).username}`}
+                className="text-sm text-[#1a5fb4] hover:underline"
+              >
+                {(session.user as { username?: string }).username}
+              </Link>
+            ) : (
+              <span className="text-sm text-[#6c757d]">{session.user?.name}</span>
+            )}
+            <button
+              onClick={() => signOut()}
+              className="text-sm text-[#6c757d] hover:text-[#1a1a1a]"
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => signIn("github")}
+            className="border border-[#1a5fb4] text-[#1a5fb4] px-4 py-1.5 text-sm hover:bg-[#f8f9fa]"
+          >
+            Sign In
+          </button>
+        )}
+      </div>
     </nav>
   );
 }

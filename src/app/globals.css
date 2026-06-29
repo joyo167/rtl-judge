@@ -2,9 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 }
+
+/* ── Dark mode overrides (outside @layer → wins over all Tailwind utilities) ── */
+
+.dark body {
+  background-color: #0d1117;
+  color: #e6edf3;
+}
+
+/* Backgrounds */
+.dark .bg-white          { background-color: #161b22; }
+.dark .bg-\[\#f8f9fa\]  { background-color: #21262d; }
+.dark .bg-\[\#f1f3f5\]  { background-color: #21262d; }
+.dark .bg-\[\#e8f0fd\]  { background-color: #1c2d4a; }
+.dark .bg-\[\#ebfbee\]  { background-color: #1a2f1f; }
+.dark .bg-\[\#fff3bf\]  { background-color: #2e2200; }
+
+/* Hover backgrounds */
+.dark .hover\:bg-\[\#f8f9fa\]:hover  { background-color: #21262d; }
+.dark .hover\:bg-\[\#e8f0fd\]:hover  { background-color: #1c2d4a; }
+.dark .hover\:bg-\[\#164a8a\]:hover  { background-color: #164a8a; }
+.dark .hover\:bg-\[\#1a4f94\]:hover  { background-color: #1a4f94; }
+
+/* Text */
+.dark .text-\[\#1a1a1a\]  { color: #e6edf3; }
+.dark .text-\[\#6c757d\]  { color: #8b949e; }
+.dark .text-\[\#343a40\]  { color: #e6edf3; }
+.dark .hover\:text-\[\#1a1a1a\]:hover { color: #e6edf3; }
+
+/* Borders */
+.dark .border-\[\#dee2e6\]  { border-color: #30363d; }
+.dark .border-\[\#f1f3f5\]  { border-color: #21262d; }
+.dark .border-\[\#adb5bd\]  { border-color: #484f58; }
+.dark .hover\:border-\[\#adb5bd\]:hover { border-color: #484f58; }
+
+/* Table / row hovers */
+.dark .hover\:bg-\[\#f8f9fa\]:hover { background-color: #1c2128; }
+
+/* Monaco / editor area */
+.dark .bg-\[\#f8f9fa\].border-b { background-color: #161b22; }
