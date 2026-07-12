@@ -2,9 +2,10 @@ require('dotenv').config()
 const { Worker } = require('bullmq')
 const { Redis }  = require('ioredis')
 const { Pool }   = require('pg')
-const { exec }   = require('child_process')
 const fs         = require('fs')
 const path       = require('path')
+const Docker     = require('dockerode')
+const docker     = new Docker()
 
 const redis = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
@@ -23,51 +24,85 @@ redis.on('error', (err) =>
 
 // ── Core judge function ──────────────────────
 async function runJudge(jobId, userCode, testbenchCode) {
-  const dir = `/tmp/jobs/${jobId}`
+  const dir = `/tmp/jobs/${jobId}` 
   fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(`${dir}/solution.v`,  userCode)
+  fs.writeFileSync(`${dir}/solution.v`, userCode)
   fs.writeFileSync(`${dir}/testbench.v`, testbenchCode)
 
   const startTime = Date.now()
+  let output = ''
+  let verdict = 'RE'
 
-  return new Promise((resolve) => {
-    const iverilog = process.env.IVERILOG_PATH || 'iverilog'
-    const timeout  = process.env.TIMEOUT_PATH  || 'timeout'
-    const cmd = [
-      `${iverilog} -o ${dir}/sim`,
-      `${dir}/testbench.v ${dir}/solution.v`,
-      `2>${dir}/ce.txt`,
-      `&& ${timeout} 5 ${dir}/sim 2>&1`,
-      `|| (echo "==CE==" && cat ${dir}/ce.txt)`
-    ].join(' ')
+  try {
+    const container = await docker.createContainer({
+      Image: 'rtl-judge:latest',
+      Cmd: ['sh', '-c',
+        `/usr/bin/iverilog -o /tmp/sim /judge/testbench.v /judge/solution.v 2>/tmp/ce.txt` +
+        ` && /usr/bin/timeout 5 /tmp/sim 2>&1` +
+        ` || (echo "==CE==" && cat /tmp/ce.txt)` 
+      ],
+      HostConfig: {
+        Binds: [`${dir}:/judge:ro`],
+        Memory: 256 * 1024 * 1024,
+        NanoCpus: 1 * 1e9,
+        NetworkMode: 'none',
+        PidsLimit: 50,
+        AutoRemove: true,
+      },
+    })
 
-    exec(cmd,
-      { timeout: 7000, maxBuffer: 512 * 1024 },
-      (err, stdout, stderr) => {
-        const runtimeMs = Date.now() - startTime
-        const output = stdout || ''
+    await container.start()
 
-        let verdict
-        if (output.includes('==CE=='))
-          verdict = 'CE'
-        else if (err && err.killed)
-          verdict = 'TLE'
-        else if (output.includes('VERDICT: ACCEPTED'))
-          verdict = 'AC'
-        else if (output.includes('VERDICT: WRONG_ANSWER'))
-          verdict = 'WA'
-        else
-          verdict = 'RE'
+    const logStream = await container.logs({
+      follow: true,
+      stdout: true,
+      stderr: true,
+    })
 
-        // cleanup
-        try {
-          fs.rmSync(dir, { recursive: true, force: true })
-        } catch(e) {}
+    output = await new Promise((resolve) => {
+      const chunks = []
+      logStream.on('data', chunk => chunks.push(chunk))
+      logStream.on('end', () => {
+        const raw = Buffer.concat(chunks).toString('utf8')
+        // Strip Docker log headers (8-byte prefix per frame)
+        const lines = []
+        let i = 0
+        while (i < raw.length) {
+          if (i + 8 <= raw.length) {
+            const size = raw.charCodeAt(i+4) * 16777216 +
+                         raw.charCodeAt(i+5) * 65536 +
+                         raw.charCodeAt(i+6) * 256 +
+                         raw.charCodeAt(i+7)
+            lines.push(raw.slice(i + 8, i + 8 + size))
+            i += 8 + size
+          } else { break }
+        }
+        resolve(lines.join(''))
+      })
+    })
 
-        resolve({ verdict, output: output.slice(0, 4000), runtimeMs })
-      }
-    )
-  })
+  } catch (err) {
+    console.error('[docker] error:', err.message)
+    output = err.message
+    verdict = 'RE'
+  } finally {
+    try { 
+      fs.rmSync(dir, { recursive: true, force: true }) 
+    } catch(e) {}
+  }
+
+  const runtimeMs = Date.now() - startTime
+
+  if (output.includes('==CE=='))               verdict = 'CE'
+  else if (runtimeMs >= 5500)                  verdict = 'TLE'
+  else if (output.includes('VERDICT: ACCEPTED'))    verdict = 'AC'
+  else if (output.includes('VERDICT: WRONG_ANSWER')) verdict = 'WA'
+  else                                         verdict = 'RE'
+
+  console.log(`[judge] verdict: ${verdict} in ${runtimeMs}ms`)
+  console.log(`[judge] output: ${output.slice(0, 200)}`)
+
+  return { verdict, output: output.slice(0, 4000), runtimeMs }
 }
 
 // ── BullMQ Worker ────────────────────────────
