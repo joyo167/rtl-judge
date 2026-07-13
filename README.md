@@ -301,9 +301,3 @@ endmodule
 | Judge service | AWS EC2 + PM2 | `git pull` → `pm2 restart rtl-judge` |
 | Database | Supabase | `npx prisma migrate deploy` |
 | Redis / Queues | Upstash | Managed — no action needed |
-
----
-
-## License
-
-MIT
