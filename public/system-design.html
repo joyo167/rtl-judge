@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTL Judge — System Design</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      color: #111;
+      padding: 48px 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 52px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 24px;
+    }
+
+    section {
+      margin-bottom: 64px;
+    }
+
+    /* ── Architecture Diagram ── */
+
+    .diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      width: 100%;
+    }
+
+    .box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      padding: 14px 20px;
+      min-width: 140px;
+      text-align: center;
+      position: relative;
+    }
+
+    .box .label {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .box .sublabel {
+      font-size: 11px;
+      margin-top: 3px;
+      opacity: 0.75;
+    }
+
+    /* colors */
+    .box-blue   { background: #e8f0fe; border: 1.5px solid #4285f4; color: #1a56db; }
+    .box-black  { background: #f0f0f0; border: 1.5px solid #333;    color: #111; }
+    .box-green  { background: #e6f9f0; border: 1.5px solid #22c55e; color: #166534; }
+    .box-red    { background: #fff0f0; border: 1.5px solid #ef4444; color: #991b1b; }
+    .box-orange { background: #fff7ed; border: 1.5px solid #f97316; color: #9a3412; }
+    .box-teal   { background: #f0fdfa; border: 1.5px solid #14b8a6; color: #0f766e; }
+    .box-gray   { background: #f3f4f6; border: 1.5px solid #9ca3af; color: #374151; }
+
+    /* arrows */
+    .arrow-v {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .arrow-v .line { width: 2px; height: 28px; background: #d1d5db; }
+    .arrow-v .tip  { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #d1d5db; }
+    .arrow-v .tip-up { border-top: none; border-bottom: 8px solid #d1d5db; }
+
+    .arrow-v .tag {
+      font-size: 10px;
+      color: #999;
+      white-space: nowrap;
+      margin: 2px 0;
+    }
+
+    .arrow-h {
+      display: flex;
+      align-items: center;
+    }
+
+    .arrow-h .line { height: 2px; background: #d1d5db; min-width: 32px; }
+    .arrow-h .tip  { width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #d1d5db; }
+    .arrow-h .tip-left { border-left: none; border-right: 8px solid #d1d5db; }
+
+    .arrow-h .tag {
+      font-size: 10px;
+      color: #999;
+      white-space: nowrap;
+      padding: 0 6px;
+    }
+
+    /* middle row layout */
+    .mid-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      width: 100%;
+    }
+
+    .vert-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Request Flow ── */
+
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      max-width: 620px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .step-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 28px;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .step-line {
+      width: 2px;
+      height: 28px;
+      background: #e5e7eb;
+      margin: 2px 0;
+    }
+
+    .step-body {
+      padding-top: 4px;
+      padding-bottom: 28px;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .step-desc {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 3px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* step colors */
+    .s1 .step-num { background: #dbeafe; color: #1d4ed8; }
+    .s2 .step-num { background: #f0f0f0; color: #111; }
+    .s3 .step-num { background: #e6f9f0; color: #166534; }
+    .s4 .step-num { background: #fff0f0; color: #991b1b; }
+    .s5 .step-num { background: #f0f0f0; color: #111; }
+    .s6 .step-num { background: #fff7ed; color: #9a3412; }
+    .s7 .step-num { background: #f0fdfa; color: #0f766e; }
+    .s8 .step-num { background: #e6f9f0; color: #166534; }
+    .s9 .step-num { background: #dbeafe; color: #1d4ed8; }
+
+    /* ── Key Design Decisions ── */
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #9ca3af;
+      border-bottom: 1.5px solid #e5e7eb;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody td {
+      padding: 14px 16px;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    td:first-child {
+      font-weight: 600;
+      color: #111;
+      width: 280px;
+      white-space: nowrap;
+    }
+
+    td:nth-child(2) {
+      color: #374151;
+    }
+
+    td .highlight {
+      font-weight: 600;
+      color: #111;
+    }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid #f3f4f6;
+      margin: 0 0 48px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>RTL Judge — System Design</h1>
+  <p class="subtitle">Full-stack online judge for Verilog problems</p>
+
+  <!-- ── 1. Architecture Diagram ── -->
+  <section>
+    <p class="section-label">1 · Architecture Diagram</p>
+
+    <div class="diagram">
+
+      <!-- Browser -->
+      <div class="box box-blue">
+        <span class="label">Browser</span>
+        <span class="sublabel">Chrome / Firefox</span>
+      </div>
+
+      <div class="arrow-v">
+        <div class="line"></div>
+        <div class="tag">HTTPS</div>
+        <div class="line"></div>
+        <div class="tip"></div>
+      </div>
+
+      <!-- Vercel -->
+      <div class="box box-black" style="min-width:200px;">
+        <span class="label">Vercel · Next.js 14</span>
+        <span class="sublabel">App Router · API Routes · Auth</span>
+      </div>
+
+      <!-- Vercel → Supabase + Upstash side by side -->
+      <div class="mid-row" style="margin-top:0;">
+
+        <!-- left branch → Supabase -->
+        <div class="vert-group">
+          <div class="arrow-v">
+            <div class="line" style="height:20px;"></div>
+            <div class="tag">Prisma ORM</div>
+            <div class="line" style="height:20px;"></div>
+            <div class="tip"></div>
+          </div>
+          <div class="box box-green">
+            <span class="label">Supabase</span>
+            <span class="sublabel">PostgreSQL</span>
+          </div>
+        </div>
+
+        <div style="width:48px;"></div>
+
+        <!-- right branch → Upstash -->
+        <div class="vert-group">
+          <div class="arrow-v">
+            <div class="line" style="height:20px;"></div>
+            <div class="tag">push job</div>
+            <div class="line" style="height:20px;"></div>
+            <div class="tip"></div>
+          </div>
+          <div class="box box-red">
+            <span class="label">Upstash Redis</span>
+            <span class="sublabel">BullMQ · Leaderboard</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Upstash → EC2 arrow -->
+      <div class="arrow-v" style="margin-top:0;">
+        <div class="line" style="height:20px;"></div>
+        <div class="tag">worker pulls job</div>
+        <div class="line" style="height:20px;"></div>
+        <div class="tip"></div>
+      </div>
+
+      <!-- EC2 -->
+      <div class="box box-orange" style="min-width:220px;">
+        <span class="label">AWS EC2 · Judge Service</span>
+        <span class="sublabel">Node.js · BullMQ worker · PM2</span>
+      </div>
+
+      <!-- EC2 → Docker + writes back -->
+      <div class="mid-row" style="margin-top:0;">
+
+        <!-- Docker -->
+        <div class="vert-group">
+          <div class="arrow-v">
+            <div class="line" style="height:20px;"></div>
+            <div class="tag">dockerode</div>
+            <div class="line" style="height:20px;"></div>
+            <div class="tip"></div>
+          </div>
+          <div class="box box-teal">
+            <span class="label">Docker Container</span>
+            <span class="sublabel">rtl-judge:latest · iverilog</span>
+          </div>
+        </div>
+
+        <div style="width:16px;"></div>
+
+        <!-- writes back group -->
+        <div class="vert-group" style="gap:12px; margin-top:20px; padding-top: 20px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="arrow-h" style="transform:rotate(180deg);">
+              <div class="tip"></div>
+              <div class="line" style="min-width:24px;"></div>
+            </div>
+            <div class="box box-green" style="min-width:130px; padding:10px 14px;">
+              <span class="label" style="font-size:12px;">Supabase</span>
+              <span class="sublabel">write verdict</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="arrow-h" style="transform:rotate(180deg);">
+              <div class="tip"></div>
+              <div class="line" style="min-width:24px;"></div>
+            </div>
+            <div class="box box-red" style="min-width:130px; padding:10px 14px;">
+              <span class="label" style="font-size:12px;">Upstash Redis</span>
+              <span class="sublabel">ZADD leaderboard</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- GitHub OAuth note -->
+      <div style="margin-top:40px; display:flex; align-items:center; gap:10px;">
+        <div class="box box-black" style="min-width:120px; padding:10px 16px;">
+          <span class="label" style="font-size:12px;">Vercel</span>
+        </div>
+        <div class="arrow-h">
+          <div class="line" style="min-width:32px;"></div>
+          <div class="tag">OAuth redirect</div>
+          <div class="line" style="min-width:32px;"></div>
+          <div class="tip"></div>
+        </div>
+        <div class="box box-gray" style="min-width:120px; padding:10px 16px;">
+          <span class="label" style="font-size:12px;">GitHub</span>
+          <span class="sublabel">OAuth 2.0</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 2. Request Flow ── -->
+  <section>
+    <p class="section-label">2 · Request Flow — What happens when a user submits code</p>
+
+    <div class="flow">
+
+      <div class="step s1">
+        <div class="step-connector">
+          <div class="step-num">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">User clicks Submit</div>
+          <div class="step-desc">Monaco editor sends code to the Next.js API</div>
+        </div>
+      </div>
+
+      <div class="step s2">
+        <div class="step-connector">
+          <div class="step-num">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">POST /api/submissions</div>
+          <div class="step-desc">Next.js route handler receives code + problemId + userId</div>
+        </div>
+      </div>
+
+      <div class="step s3">
+        <div class="step-connector">
+          <div class="step-num">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">Save to PostgreSQL as <code style="font-size:12px; background:#f3f4f6; padding:1px 5px; border-radius:3px;">pending</code></div>
+          <div class="step-desc">Prisma inserts a Submission row with verdict = "pending"</div>
+        </div>
+      </div>
+
+      <div class="step s4">
+        <div class="step-connector">
+          <div class="step-num">4</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">Push job to Redis queue</div>
+          <div class="step-desc">BullMQ enqueues job with submissionId, code, testbenchCode into the <code style="font-size:12px; background:#fff0f0; padding:1px 5px; border-radius:3px; color:#991b1b;">submissions</code> queue</div>
+        </div>
+      </div>
+
+      <div class="step s5">
+        <div class="step-connector">
+          <div class="step-num">5</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">Return submissionId <span class="badge" style="background:#f0f0f0; color:#555;">~100ms</span></div>
+          <div class="step-desc">API responds immediately — judging is async. Frontend starts polling.</div>
+        </div>
+      </div>
+
+      <div class="step s6">
+        <div class="step-connector">
+          <div class="step-num">6</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">EC2 worker picks up the job</div>
+          <div class="step-desc">BullMQ worker on EC2 pulls the job from Redis and writes solution.v + testbench.v to /tmp/jobs/&lt;id&gt;/</div>
+        </div>
+      </div>
+
+      <div class="step s7">
+        <div class="step-connector">
+          <div class="step-num">7</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">Docker container runs iverilog</div>
+          <div class="step-desc">Sandboxed container compiles + simulates with limits: 256 MB RAM · 1 CPU · 50 PIDs · no network · 5s timeout</div>
+        </div>
+      </div>
+
+      <div class="step s8">
+        <div class="step-connector">
+          <div class="step-num">8</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">Verdict written to PostgreSQL</div>
+          <div class="step-desc">Judge parses stdout → AC / WA / CE / TLE / RE. Updates Submission row. If AC + first solve, awards points and updates Redis leaderboard.</div>
+        </div>
+      </div>
+
+      <div class="step s9">
+        <div class="step-connector">
+          <div class="step-num">9</div>
+        </div>
+        <div class="step-body">
+          <div class="step-title">Frontend poll detects verdict</div>
+          <div class="step-desc">GET /api/submissions/[id] polling every ~1.5s sees verdict ≠ "pending" and renders the result</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── 3. Key Design Decisions ── -->
+  <section>
+    <p class="section-label">3 · Key Design Decisions</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Decision</th>
+          <th>Reasoning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Why EC2, not Vercel for the judge?</td>
+          <td>
+            Vercel is serverless — functions can't hold a persistent BullMQ worker connection or access a Docker daemon.
+            EC2 is a persistent VM with full OS access, Docker installed, and PM2 to keep the process alive across crashes and reboots.
+          </td>
+        </tr>
+        <tr>
+          <td>Why Redis sorted sets for the leaderboard?</td>
+          <td>
+            Redis sorted sets use a <span class="highlight">skip list</span> internally — every score update is <span class="highlight">O(log N)</span>, the set stays ordered at all times with no re-sorting.
+            Fetching the top 100 is O(log N + 100). A PostgreSQL <code style="font-size:12px; background:#f3f4f6; padding:1px 4px; border-radius:3px;">ORDER BY points DESC</code> at scale would be significantly heavier.
+          </td>
+        </tr>
+        <tr>
+          <td>Why Docker containers, not raw exec()?</td>
+          <td>
+            Raw <code style="font-size:12px; background:#f3f4f6; padding:1px 4px; border-radius:3px;">exec()</code> runs untrusted Verilog directly on the EC2 host — a malicious submission could read files, make network calls, or exhaust resources.
+            Docker provides full isolation: read-only bind mount, no network, PID/memory/CPU limits, and AutoRemove so containers can't accumulate.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</body>
+</html>
